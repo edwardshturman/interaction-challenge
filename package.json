@@ -1,28 +1,53 @@
 {
   "name": "interaction-challenge",
+  "author": "Edward Shturman",
   "version": "0.1.0",
+  "license": "UNLICENSED",
+  "description": "Interaction design challenge: adding Recipes",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edwardshturman/interaction-challenge.git"
+  },
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "predev": "bun install",
+    "dev": "next dev --turbopack",
+    "lint": "eslint",
+    "format:check": "prettier . --check --ignore-unknown",
+    "format:write": "prettier . --write --ignore-unknown",
+    "prebuild": "bun run lint && bun run format:check",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start"
+  },
+  "lint-staged": {
+    "**/*": [
+      "bun run lint",
+      "bun run format:write"
+    ]
   },
   "dependencies": {
     "next": "16.2.10",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
     "babel-plugin-react-compiler": "1.0.0",
-    "eslint": "^9",
+    "eslint": "9.33.0",
     "eslint-config-next": "16.2.10",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^5"
+    "eslint-config-prettier": "10.1.8",
+    "husky": "9.1.7",
+    "lint-staged": "16.1.5",
+    "next-devtools-mcp": "0.4.0",
+    "prettier": "3.9.5",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": "24.x"
   },
   "ignoreScripts": [
     "sharp",
