@@ -64,7 +64,7 @@ function IntegrationCard({
       </div>
       <Link
         href="#"
-        className="flex size-7 shrink-0 items-center justify-center rounded-full text-faint transition-colors hover:bg-foreground/[0.06] hover:text-muted"
+        className="flex size-7 shrink-0 items-center justify-center rounded-[8px] text-faint transition-colors hover:bg-foreground/[0.06] hover:text-muted"
         aria-label={`More options for ${integration.name}`}
       >
         <svg
@@ -82,7 +82,7 @@ function IntegrationCard({
         type="button"
         aria-pressed={integration.connected}
         onClick={() => onConnectedChange(!integration.connected)}
-        className={`shrink-0 rounded-full border px-[18px] py-[9px] text-[15px] font-semibold tracking-[-0.01em] transition active:scale-[0.97] ${
+        className={`shrink-0 rounded-[12px] border px-[18px] py-[9px] text-[15px] font-semibold tracking-[-0.01em] transition active:scale-[0.97] cursor-pointer ${
           integration.connected
             ? "border-[hsla(145,45%,45%,0.35)] bg-[hsla(145,55%,96%,1)] text-[hsla(150,55%,28%,1)] hover:bg-[hsla(145,50%,93%,1)]"
             : "border-border-soft bg-card shadow-[0_1px_2px_hsla(48,8%,12%,0.08)] hover:bg-[hsla(43,30%,95%,1)]"
