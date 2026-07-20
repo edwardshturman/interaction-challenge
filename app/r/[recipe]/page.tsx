@@ -33,7 +33,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { recipe } = await params
   const slug = decodeURIComponent(recipe).toLowerCase()
-  return { title: `${displayNameFromSlug(slug)} · Poke` }
+  return { title: `${displayNameFromSlug(slug)} — Poke` }
 }
 
 export default async function RecipePage({

@@ -1,9 +1,35 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
+import { Copy, Flag } from "lucide-react"
 import type { Integration } from "@/lib/recipes"
 import { DebugPanel } from "./debug-panel"
 import { Logo } from "./logo"
+
+function IconAction({
+  label,
+  children
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      href="#"
+      aria-label={label}
+      className="group relative flex size-14 shrink-0 items-center justify-center rounded-[18px] border border-border-soft bg-card text-muted shadow-[0_1px_2px_hsla(48,8%,12%,0.08)] transition hover:bg-[hsla(43,30%,95%,1)] hover:text-foreground active:scale-[0.97]"
+    >
+      {children}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 rounded-lg bg-foreground px-2.5 py-1 text-xs font-medium whitespace-nowrap text-background opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+      >
+        {label}
+      </span>
+    </Link>
+  )
+}
 
 function IntegrationCard({
   integration,
@@ -36,7 +62,7 @@ function IntegrationCard({
           {integration.description}
         </span>
       </div>
-      <a
+      <Link
         href="#"
         className="flex size-7 shrink-0 items-center justify-center rounded-full text-faint transition-colors hover:bg-foreground/[0.06] hover:text-muted"
         aria-label={`More options for ${integration.name}`}
@@ -51,7 +77,7 @@ function IntegrationCard({
           <circle cx="8" cy="2" r="1.5" />
           <circle cx="14" cy="2" r="1.5" />
         </svg>
-      </a>
+      </Link>
       <button
         type="button"
         aria-pressed={integration.connected}
@@ -121,31 +147,39 @@ export function RecipeSetup({
       </section>
 
       <div className="mt-auto flex flex-col items-center gap-5 pb-2">
-        <a
-          href="#"
-          aria-disabled={!ready}
-          tabIndex={ready ? undefined : -1}
-          className={`flex min-h-14 w-full items-center justify-center rounded-[18px] text-[17px] font-semibold tracking-[-0.01em] transition ${
-            ready
-              ? "bg-[hsla(45,8%,10%,1)] text-white shadow-[0_6px_16px_hsla(48,8%,12%,0.22),inset_0_1px_0_hsla(0,0%,100%,0.12)] hover:shadow-[0_8px_20px_hsla(48,8%,12%,0.28),inset_0_1px_0_hsla(0,0%,100%,0.12)] active:scale-[0.98]"
-              : "cursor-not-allowed bg-foreground/[0.08] text-foreground/35"
-          }`}
-        >
-          Get Started
-        </a>
+        <div className="flex w-full items-center gap-2.5">
+          <Link
+            href="#"
+            aria-disabled={!ready}
+            tabIndex={ready ? undefined : -1}
+            className={`flex min-h-14 flex-1 items-center justify-center rounded-[18px] text-[17px] font-semibold tracking-[-0.01em] transition ${
+              ready
+                ? "bg-[hsla(45,8%,10%,1)] text-white shadow-[0_6px_16px_hsla(48,8%,12%,0.22),inset_0_1px_0_hsla(0,0%,100%,0.12)] hover:shadow-[0_8px_20px_hsla(48,8%,12%,0.28),inset_0_1px_0_hsla(0,0%,100%,0.12)] active:scale-[0.98]"
+                : "cursor-not-allowed bg-foreground/[0.08] text-foreground/35"
+            }`}
+          >
+            Get Started
+          </Link>
+          <IconAction label="Duplicate">
+            <Copy className="size-5" aria-hidden="true" />
+          </IconAction>
+          <IconAction label="Report a problem">
+            <Flag className="size-5" aria-hidden="true" />
+          </IconAction>
+        </div>
         <nav
           className="flex items-center gap-2.5 text-sm font-medium text-faint"
           aria-label="Footer"
         >
-          <a href="#" className="transition-colors hover:text-muted">
+          <Link href="#" className="transition-colors hover:text-muted">
             Use Cases
-          </a>
+          </Link>
           <span className="select-none" aria-hidden="true">
             ·
           </span>
-          <a href="#" className="transition-colors hover:text-muted">
+          <Link href="#" className="transition-colors hover:text-muted">
             poke.com
-          </a>
+          </Link>
         </nav>
 
         <DebugPanel
