@@ -54,7 +54,9 @@ export function DebugPanel({
             <Switch
               checked={integration.required}
               label={`${integration.name} required`}
-              onChange={(required) => onRequiredChange(integration.id, required)}
+              onChange={(required) =>
+                onRequiredChange(integration.id, required)
+              }
             />
           </label>
         ))}
