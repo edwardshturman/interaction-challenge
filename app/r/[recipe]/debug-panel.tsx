@@ -16,7 +16,7 @@ function Switch({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${
+      className={`relative h-6 w-10 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/50 ${
         checked ? "bg-foreground" : "bg-foreground/15"
       }`}
     >

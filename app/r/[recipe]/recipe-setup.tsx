@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Copy, Flag, HeartPulse, Mail, Plus, Puzzle } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import type { Integration, Provider } from "@/lib/recipes"
@@ -32,30 +32,69 @@ function IconAction({
   children: React.ReactNode
 }) {
   return (
-    <Link
-      href="#"
+    <button
+      type="button"
       aria-label={label}
-      className="group relative flex size-14 shrink-0 items-center justify-center rounded-[18px] border border-border-soft bg-card text-muted shadow-[0_1px_2px_hsla(48,8%,12%,0.08)] transition hover:bg-[hsla(43,30%,95%,1)] hover:text-foreground active:scale-[0.97]"
+      className="group relative flex size-14 shrink-0 cursor-pointer items-center justify-center rounded-[18px] border border-border-soft bg-card text-muted shadow-[0_1px_2px_hsla(48,8%,12%,0.08)] transition hover:bg-[hsla(43,30%,95%,1)] hover:text-foreground active:scale-[0.97]"
     >
       {children}
       <Tooltip label={label} />
-    </Link>
+    </button>
   )
 }
 
 function ProviderPicker({
   integration,
-  onSelect
+  onSelect,
+  triggerRef
 }: {
   integration: Integration
   onSelect: (provider: Provider) => void
+  triggerRef: React.RefObject<HTMLButtonElement | null>
 }) {
   const [open, setOpen] = useState(false)
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  const close = () => {
+    setOpen(false)
+    triggerRef.current?.focus()
+  }
+
+  const openMenu = () => {
+    setOpen(true)
+    requestAnimationFrame(() => itemRefs.current[0]?.focus())
+  }
+
+  // WAI-ARIA menu pattern: the flyout is a single tab stop; arrows move
+  // between items, Home/End jump, Escape and Tab close and restore focus
+  const onMenuKeyDown = (e: React.KeyboardEvent) => {
+    const items = itemRefs.current.filter((item) => item !== null)
+    const current = items.indexOf(document.activeElement as HTMLButtonElement)
+    const focusItem = (index: number) =>
+      items[(index + items.length) % items.length]?.focus()
+
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault()
+      focusItem(current + 1)
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault()
+      focusItem(current - 1)
+    } else if (e.key === "Home") {
+      e.preventDefault()
+      focusItem(0)
+    } else if (e.key === "End") {
+      e.preventDefault()
+      focusItem(items.length - 1)
+    } else if (e.key === "Tab") {
+      setOpen(false)
+      triggerRef.current?.focus()
+    }
+  }
 
   return (
     <div
       className="relative shrink-0"
-      onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+      onKeyDown={(e) => e.key === "Escape" && close()}
     >
       {open && (
         <button
@@ -67,11 +106,12 @@ function ProviderPicker({
         />
       )}
       <button
+        ref={triggerRef}
         type="button"
-        aria-haspopup="true"
+        aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`Choose a provider for ${integration.name}`}
-        onClick={() => setOpen(!open)}
+        onClick={() => (open ? setOpen(false) : openMenu())}
         className="flex size-10 cursor-pointer items-center justify-center rounded-[12px] border border-dashed border-foreground/25 text-muted transition hover:border-foreground/45 hover:bg-foreground/[0.03] hover:text-foreground active:scale-[0.97]"
       >
         <Plus className="size-5" aria-hidden="true" />
@@ -79,14 +119,20 @@ function ProviderPicker({
       {open && (
         <div
           role="menu"
+          aria-orientation="horizontal"
           aria-label={`${integration.name} providers`}
+          onKeyDown={onMenuKeyDown}
           className="absolute right-0 bottom-[calc(100%+8px)] z-20 flex gap-1.5 rounded-[14px] border border-border-soft bg-card p-1.5 shadow-[0_8px_24px_hsla(48,8%,12%,0.14)]"
         >
-          {integration.providers?.map((provider) => (
+          {integration.providers?.map((provider, index) => (
             <button
               key={provider.id}
+              ref={(el) => {
+                itemRefs.current[index] = el
+              }}
               type="button"
               role="menuitem"
+              tabIndex={-1}
               aria-label={`Connect ${provider.name}`}
               onClick={() => {
                 onSelect(provider)
@@ -121,6 +167,11 @@ function IntegrationCard({
     (provider) => provider.id === integration.connectedProviderId
   )
 
+  // Connecting swaps the picker trigger for the Connected pill (and
+  // disconnecting swaps back), so hand focus to the replacement element
+  const pickerTriggerRef = useRef<HTMLButtonElement>(null)
+  const connectedRef = useRef<HTMLButtonElement>(null)
+
   return (
     <div className="flex items-center gap-3 rounded-[18px] border border-border-soft bg-card px-4 py-3.5 shadow-soft">
       {isGeneric ? (
@@ -138,14 +189,14 @@ function IntegrationCard({
         />
       )}
       <div className="mr-auto flex min-w-0 flex-col gap-0.5">
-        <span className="flex items-center gap-2 text-base font-semibold tracking-[-0.01em]">
-          {integration.name}
+        <span className="flex min-w-0 items-center gap-2 text-base font-semibold tracking-[-0.01em]">
+          <span className="truncate">{integration.name}</span>
           {integration.required ? (
-            <span className="rounded-full bg-[hsla(35,90%,55%,0.16)] px-2 py-0.5 text-[11px] font-semibold text-[hsla(30,65%,36%,1)]">
+            <span className="shrink-0 rounded-full bg-[hsla(35,90%,55%,0.16)] px-2 py-0.5 text-[11px] font-semibold text-[hsla(30,65%,36%,1)]">
               Required
             </span>
           ) : (
-            <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[11px] font-semibold text-muted">
+            <span className="shrink-0 rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[11px] font-semibold text-muted">
               Optional
             </span>
           )}
@@ -154,9 +205,9 @@ function IntegrationCard({
           {integration.description}
         </span>
       </div>
-      <Link
-        href="#"
-        className="flex size-7 shrink-0 items-center justify-center rounded-[8px] text-faint transition-colors hover:bg-foreground/[0.06] hover:text-muted"
+      <button
+        type="button"
+        className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-faint transition-colors hover:bg-foreground/[0.06] hover:text-muted"
         aria-label={`More options for ${integration.name}`}
       >
         <svg
@@ -169,22 +220,26 @@ function IntegrationCard({
           <circle cx="8" cy="2" r="1.5" />
           <circle cx="14" cy="2" r="1.5" />
         </svg>
-      </Link>
+      </button>
       {isGeneric && !integration.connected && (
         <ProviderPicker
           integration={integration}
-          onSelect={(provider) =>
+          triggerRef={pickerTriggerRef}
+          onSelect={(provider) => {
             onPatch({ connected: true, connectedProviderId: provider.id })
-          }
+            requestAnimationFrame(() => connectedRef.current?.focus())
+          }}
         />
       )}
       {isGeneric && integration.connected && (
         <button
+          ref={connectedRef}
           type="button"
           aria-pressed
-          onClick={() =>
+          onClick={() => {
             onPatch({ connected: false, connectedProviderId: undefined })
-          }
+            requestAnimationFrame(() => pickerTriggerRef.current?.focus())
+          }}
           className="shrink-0 cursor-pointer rounded-[12px] border border-[hsla(145,45%,45%,0.35)] bg-[hsla(145,55%,96%,1)] px-[18px] py-[9px] text-[15px] font-semibold tracking-[-0.01em] text-[hsla(150,55%,28%,1)] transition hover:bg-[hsla(145,50%,93%,1)] active:scale-[0.97]"
         >
           <span className="flex items-center gap-1.5">
@@ -267,12 +322,13 @@ export function RecipeSetup({
         ))}
       </section>
 
-      <div className="mt-auto flex flex-col items-center gap-5 pb-2">
+      <div className="mt-auto flex flex-col items-center gap-5 pb-[calc(8px+env(safe-area-inset-bottom))]">
         <div className="flex w-full items-center gap-2.5">
           <Link
             href="#"
             aria-disabled={!ready}
             tabIndex={ready ? undefined : -1}
+            onClick={(e) => !ready && e.preventDefault()}
             className={`flex min-h-14 flex-1 items-center justify-center rounded-[18px] text-[17px] font-semibold tracking-[-0.01em] transition ${
               ready
                 ? "bg-[hsla(45,8%,10%,1)] text-white shadow-[0_6px_16px_hsla(48,8%,12%,0.22),inset_0_1px_0_hsla(0,0%,100%,0.12)] hover:shadow-[0_8px_20px_hsla(48,8%,12%,0.28),inset_0_1px_0_hsla(0,0%,100%,0.12)] active:scale-[0.98]"

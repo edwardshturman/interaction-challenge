@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="flex w-full max-w-[600px] flex-col gap-5">
-        <h1 className="font-serif text-[34px] leading-[1.15] font-normal tracking-[-0.01em]">
+        <h1 className="font-serif text-[34px] leading-[1.15] font-normal tracking-[-0.01em] text-balance">
           Recipe install screens
         </h1>
         <ul className="flex list-disc flex-col gap-2.5 pl-5 text-base leading-[1.6] text-muted marker:text-faint">

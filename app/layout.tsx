@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import "./globals.css"
 
@@ -35,6 +35,10 @@ const exposure = localFont({
 export const metadata: Metadata = {
   title: "Poke",
   description: "Install recipes for Poke"
+}
+
+export const viewport: Viewport = {
+  themeColor: "hsl(42deg, 50%, 98%)"
 }
 
 export default function RootLayout({

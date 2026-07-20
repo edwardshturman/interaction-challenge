@@ -9,6 +9,7 @@ function VerifiedBadge() {
       className="size-4"
       viewBox="0 0 20 20"
       fill="none"
+      role="img"
       aria-label="Verified"
     >
       <path
@@ -54,7 +55,7 @@ export default async function RecipePage({
             name={name}
             className="size-16 rounded-[14px] text-[1.6rem] [&_svg]:rounded-[14px] sm:size-[72px] sm:rounded-2xl sm:[&_svg]:rounded-2xl"
           />
-          <h1 className="font-serif text-[34px] leading-[1.15] font-normal tracking-[-0.01em] [overflow-wrap:anywhere] sm:text-[38px]">
+          <h1 className="font-serif text-[34px] leading-[1.15] font-normal tracking-[-0.01em] text-balance [overflow-wrap:anywhere] sm:text-[38px]">
             {name}
           </h1>
           <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[15px] font-medium text-muted">
