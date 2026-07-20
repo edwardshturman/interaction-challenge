@@ -1,8 +1,17 @@
 const SVGL_API = "https://api.svgl.app"
 
-// Cache svgl responses for an hour — the API is rate-limited and its docs
-// ask consumers to cache instead of re-requesting on every call.
+// svgl asks consumers to cache API responses instead of re-requesting per
+// call. We fetch the full catalog once, cache it for an hour (Next data
+// cache, shared across requests on Vercel), and match slugs in-process —
+// so upstream sees one catalog request per hour plus one cached request
+// per SVG file, no matter the traffic.
 const REVALIDATE_SECONDS = 3600
+
+// Identify ourselves honestly; anonymous datacenter traffic is what
+// rate limiters and WAFs are tuned to reject
+const REQUEST_HEADERS = {
+  "User-Agent": "poke-recipe-prototype/0.1 (interaction design demo)"
+}
 
 type ThemeOptions = {
   dark: string
@@ -26,12 +35,38 @@ export interface RecipeLogo {
   svg: string
 }
 
+async function getCatalog(): Promise<SvglResult[] | null> {
+  try {
+    const res = await fetch(SVGL_API, {
+      headers: REQUEST_HEADERS,
+      next: { revalidate: REVALIDATE_SECONDS }
+    })
+    if (!res.ok) {
+      console.warn(`svgl: ${res.status} fetching catalog`)
+      return null
+    }
+    const results: SvglResult[] = await res.json()
+    return Array.isArray(results) ? results : null
+  } catch (error) {
+    console.warn("svgl: failed to fetch catalog", error)
+    return null
+  }
+}
+
+function findEntry(catalog: SvglResult[], query: string): SvglResult | null {
+  return (
+    catalog.find((s) => s.title.toLowerCase() === query) ??
+    catalog.find((s) => s.title.toLowerCase().startsWith(query)) ??
+    catalog.find((s) => s.title.toLowerCase().includes(query)) ??
+    null
+  )
+}
+
 /**
- * The search API's `route` URLs point at the svgl website (svgl.app), which
- * sits behind bot protection that blocks datacenter-origin fetches (e.g.
- * Vercel functions). The API host serves the same files programmatically,
- * so prefer https://api.svgl.app/svg/<file> and keep the route URL as a
- * fallback.
+ * SVG contents are served from the API host ("Get the SVG code" endpoint);
+ * the catalog's route URLs point at the svgl website, which sits behind
+ * bot protection that can block server-origin fetches. Keep the route URL
+ * as a fallback.
  */
 function apiSvgUrl(routeUrl: string): string | null {
   const filename = routeUrl.split("/").pop()
@@ -39,55 +74,48 @@ function apiSvgUrl(routeUrl: string): string | null {
 }
 
 async function fetchSvg(url: string): Promise<string | null> {
-  const res = await fetch(url, {
-    next: { revalidate: REVALIDATE_SECONDS }
-  })
-  if (!res.ok) {
-    console.warn(`svgl: ${res.status} fetching ${url}`)
+  try {
+    const res = await fetch(url, {
+      headers: REQUEST_HEADERS,
+      next: { revalidate: REVALIDATE_SECONDS }
+    })
+    if (!res.ok) {
+      console.warn(`svgl: ${res.status} fetching ${url}`)
+      return null
+    }
+    const svg = await res.text()
+    if (!svg.trimStart().startsWith("<svg")) {
+      console.warn(`svgl: non-SVG response from ${url}`)
+      return null
+    }
+    return svg
+  } catch (error) {
+    console.warn(`svgl: failed to fetch ${url}`, error)
     return null
   }
-  const svg = await res.text()
-  if (!svg.trimStart().startsWith("<svg")) {
-    console.warn(`svgl: non-SVG response from ${url}`)
-    return null
-  }
-  return svg
 }
 
 /**
- * Search svgl for a logo matching the recipe slug and return its inline SVG
+ * Look up a logo in the cached svgl catalog and return its inline SVG
  * markup. Returns null when no logo is found or the API is unavailable.
  */
 export async function getRecipeLogo(slug: string): Promise<RecipeLogo | null> {
   const query = slug.trim().toLowerCase()
   if (!query) return null
 
-  try {
-    const res = await fetch(`${SVGL_API}?search=${encodeURIComponent(query)}`, {
-      next: { revalidate: REVALIDATE_SECONDS }
-    })
-    if (!res.ok) {
-      console.warn(`svgl: ${res.status} searching for "${query}"`)
-      return null
-    }
+  const catalog = await getCatalog()
+  if (!catalog) return null
 
-    const results: SvglResult[] = await res.json()
-    if (!Array.isArray(results) || results.length === 0) return null
+  const match = findEntry(catalog, query)
+  if (!match) return null
 
-    const match =
-      results.find((r) => r.title.toLowerCase() === query) ?? results[0]
+  const routeUrl =
+    typeof match.route === "string" ? match.route : match.route.light
 
-    const routeUrl =
-      typeof match.route === "string" ? match.route : match.route.light
+  const apiUrl = apiSvgUrl(routeUrl)
+  const svg =
+    (apiUrl ? await fetchSvg(apiUrl) : null) ?? (await fetchSvg(routeUrl))
+  if (!svg) return null
 
-    const apiUrl = apiSvgUrl(routeUrl)
-    const svg =
-      (apiUrl ? await fetchSvg(apiUrl) : null) ?? (await fetchSvg(routeUrl))
-    if (!svg) return null
-
-    return { title: match.title, svg }
-  } catch (error) {
-    console.warn(`svgl: failed to resolve logo for "${query}"`, error)
-    return null
-  }
+  return { title: match.title, svg }
 }
