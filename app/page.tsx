@@ -10,6 +10,11 @@ const EXAMPLES = [
     href: "/r/spotify",
     slug: "/r/spotify",
     note: "one required, one optional integration"
+  },
+  {
+    href: "/r/sleep-brief",
+    slug: "/r/sleep-brief",
+    note: "required categories with a choice of provider"
   }
 ]
 
